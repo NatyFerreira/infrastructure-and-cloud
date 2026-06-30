@@ -1,0 +1,64 @@
+services:
+  # SERVICE 1: Base de données MariaDB
+  db:
+    image: mariadb:10.6.4-focal       # image officielle MariaDB
+    container_name: wordpress_db
+    restart: unless-stopped
+    env_file:
+      - .env                            # secrets charges depuis .env (jamais commit sur Git)
+    volumes:
+      - db_data:/var/lib/mysql           # volume nommé: données persistées
+    networks:
+      - internal                         # réseau interne uniquement
+    # IMPORTANT: pas de ports: -> MariaDB inaccessible depuis l'extérieur
+
+  # SERVICE 2: WordPress
+  wordpress:
+    image: wordpress:latest
+    container_name: wordpress_app
+    restart: unless-stopped
+    env_file:
+      - .env                            # secrets charges depuis .env
+    environment:
+      WORDPRESS_DB_HOST: db:3306         # 'db' = nom du service MariaDB
+      WORDPRESS_DB_NAME: ${MYSQL_DATABASE}
+      WORDPRESS_DB_USER: ${MYSQL_USER}
+      WORDPRESS_DB_PASSWORD: ${MYSQL_PASSWORD}
+    networks:
+      - internal                         # réseau interne uniquement
+    # IMPORTANT: pas de ports: -> WordPress inaccessible directement
+
+  # SERVICE 3: NGINX Proxy Manager (reverse proxy)
+  npm:
+    image: jc21/nginx-proxy-manager:2.11.3
+    container_name: nginx_proxy_manager
+    restart: unless-stopped
+    ports:
+      - "80:80"     # trafic HTTP public
+      - "81:81"     # panneau admin NPM
+      - "443:443"   # trafic HTTPS public
+    volumes:
+      - npm_data:/data                   # configuration NPM persistée
+      - npm_letsencrypt:/etc/letsencrypt # certificats SSL persistés
+    networks:
+      - internal    # parle avec WordPress (réseau interne)
+      - external    # expose vers internet (réseau externe)
+    # NPM est l'UNIQUE point d'entrée visible depuis l'extérieur
+
+# VOLUMES NOMMÉS: données persistées même si containers supprimés
+volumes:
+  db_data:           # données MySQL
+  npm_data:          # configuration NPM
+  npm_letsencrypt:   # certificats SSL
+
+# RÉSEAUX: isolation par couches
+networks:
+  internal:
+    driver: bridge   # réseau privé: db + wordpress + npm
+  external:
+    driver: bridge   # réseau public: npm uniquement
+
+# Note:
+# Flux réseau résultant: Internet → NPM :80/:443 → wordpress_app:80 → db:3306
+#                                   (external)      (internal)      (internal)
+# MariaDB n'est jamais exposé. WordPress n'est jamais exposé. Seul NPM est visible depuis l'extérieur — principe du reverse proxy.

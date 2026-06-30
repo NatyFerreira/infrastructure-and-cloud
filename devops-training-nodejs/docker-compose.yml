@@ -1,0 +1,23 @@
+# Declara a seção de serviços — cada serviço é um container. É sempre a primeira chave do compose
+
+services:
+
+  # Nome do serviço. Docker vai criar um container chamado node-app. Você escolhe o nome — poderia ser qualquer coisa
+  node-app:
+    
+    # Em vez de puxar uma imagem pronta do Hub (image: nginx), Docker vai buildar a imagem a partir do Dockerfile no diretório atual (. = aqui). É o equivalente de docker build . manual
+    build: .
+    
+    # Nome fixo para o container. Sem isso, Docker geraria um nome aleatório tipo focused_khorana
+    container_name: devops-node-app
+    
+    # Política de reinício — se o container cair por erro, Docker reinicia automaticamente. Para apenas quando você faz docker compose down explicitamente
+    restart: unless-stopped
+    
+    # Port mapping — porta 3000 do seu Mac mapeada para porta 3000 do container. Sem isso o app roda mas não é acessível pelo navegador
+    ports:
+      - "3000:3000"
+    
+    # Variável de ambiente injetada no container em tempo de execução. O app.js lê process.env.PORT para saber em qual porta escutar. Reforça o que já está no .env mas de forma explícita no compose
+    environment:
+      PORT: 3000

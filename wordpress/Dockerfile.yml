@@ -1,0 +1,31 @@
+# Imagem base — Node.js versão 18 em Alpine Linux. É o "sistema operacional" do container, com Node já instalado
+FROM node:18-alpine 
+
+# Metadado — identifica quem criou a imagem. Não afeta o funcionamento, é documentação
+LABEL maintainer="NatyFerreira"
+
+# Define /app como diretório de trabalho dentro do container. Todos os comandos seguintes rodam a partir daqui. É como fazer cd /app mas de forma permanente
+WORKDIR /app
+
+# Copia arquivos do seu Mac para dentro da imagem, no diretório /app
+COPY package.json .
+# O . significa "aqui" (o WORKDIR). package.json vem antes do app.js porque o Docker usa cache por camada — se o package.json não mudou, ele reutiliza a camada do npm install sem reinstalar tudo
+COPY app.js .
+COPY .env .
+
+# Executa durante o build da imagem. Instala as dependências listadas no package.json (express, axios, dotenv)
+RUN npm install
+
+# Define variável de ambiente disponível dentro do container. O app.js usa process.env.PORT para saber em qual porta escutar.
+ENV PORT=3000
+
+COPY ./index.html /usr/share/nginx/html/
+EXPOSE 3000
+
+# Comando executado quando o container inicia. Roda npm start que por sua vez executa node app.js. Diferente do RUN, isso não roda durante o build
+CMD ["npm", "start"]
+
+# RESUMO:
+  
+# docker build  →  FROM + LABEL + WORKDIR + COPY + RUN  (constrói a imagem)
+# docker run    →  ENV + EXPOSE + CMD                    (inicia o container)
