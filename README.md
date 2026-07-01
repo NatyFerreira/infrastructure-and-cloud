@@ -43,21 +43,21 @@ Internet
    │
    ▼
 ┌─────────────────────────────┐
-│   NGINX Proxy Manager        │   networks: external + internal
-│   ports: 80 · 81 · 443        │
-└──────────────┬───────────────┘
+│   NGINX Proxy Manager       │   networks: external + internal
+│   ports: 80 · 81 · 443      │
+└──────────────┬──────────────┘
                │ proxy → :80
                ▼
 ┌─────────────────────────────┐
-│   WordPress (wordpress_app)  │   network: internal only
-│   no exposed port             │
-└──────────────┬───────────────┘
+│   WordPress (wordpress_app) │   network: internal only
+│   no exposed port           │
+└──────────────┬──────────────┘
                │ db:3306
                ▼
 ┌─────────────────────────────┐
-│   MariaDB (wordpress_db)     │   network: internal only
-│   no exposed port             │
-└──────────────┬───────────────┘
+│   MariaDB (wordpress_db)    │   network: internal only
+│   no exposed port           │
+└──────────────┬──────────────┘
                │
                ▼
        volume: db_data (persistence)
@@ -67,11 +67,11 @@ Remote deployment flow (Day 3):
 
 ```
 Mac (local)                          OrbStack VM (Ubuntu 25.10, ARM64)
-┌──────────────────┐    rsync -av    ┌──────────────────────────┐
-│ carburoam-docker/ │ ──────────────▶│ ~/carburoam-docker/       │
-└──────────────────┘                 │                          │
+┌──────────────────┐    rsync -av     ┌──────────────────────────┐
+│ carburoam-docker/│ ──────────────▶  │ ~/carburoam-docker/      │
+└──────────────────┘                  │                          │
                                       │ docker compose up --build│
-                                      │ → carburoam:8501          │
+                                      │ → carburoam:8501         │
                                       └──────────────────────────┘
         curl http://192.168.139.40:8501  confirms identical behaviour
 ```
