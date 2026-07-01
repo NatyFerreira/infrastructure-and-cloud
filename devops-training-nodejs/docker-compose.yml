@@ -1,23 +1,22 @@
-# Declara a seção de serviços — cada serviço é um container. É sempre a primeira chave do compose
-
+# Declares the services section — each service is a container. It’s always the first key in the compose file
 services:
 
-  # Nome do serviço. Docker vai criar um container chamado node-app. Você escolhe o nome — poderia ser qualquer coisa
+  # Service name. Docker will create a container called node-app. You choose the name — it could be anything
   node-app:
     
-    # Em vez de puxar uma imagem pronta do Hub (image: nginx), Docker vai buildar a imagem a partir do Dockerfile no diretório atual (. = aqui). É o equivalente de docker build . manual
+    # Instead of pulling a ready-made image from Docker Hub (image: nginx), Docker will build the image from the Dockerfile in the current directory (. = here). It’s equivalent to running docker build . manually
     build: .
     
-    # Nome fixo para o container. Sem isso, Docker geraria um nome aleatório tipo focused_khorana
+    # Fixed name for the container. Without this, Docker would generate a random name like focused_khorana
     container_name: devops-node-app
     
-    # Política de reinício — se o container cair por erro, Docker reinicia automaticamente. Para apenas quando você faz docker compose down explicitamente
+    # Restart policy — if the container crashes due to an error, Docker automatically restarts it. It only stops when you explicitly run docker compose down
     restart: unless-stopped
     
-    # Port mapping — porta 3000 do seu Mac mapeada para porta 3000 do container. Sem isso o app roda mas não é acessível pelo navegador
+    # Port mapping — port 3000 on your Mac mapped to port 3000 inside the container. Without this, the app runs but isn’t accessible from the browser
     ports:
       - "3000:3000"
     
-    # Variável de ambiente injetada no container em tempo de execução. O app.js lê process.env.PORT para saber em qual porta escutar. Reforça o que já está no .env mas de forma explícita no compose
+    # Environment variable injected into the container at runtime. app.js reads process.env.PORT to know which port to listen on. It reinforces what’s already in .env but makes it explicit in the compose file
     environment:
       PORT: 3000
