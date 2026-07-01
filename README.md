@@ -300,6 +300,75 @@ free -h
 
 > When `real` time is much larger than `user + sys`, the process is waiting on something external (network, disk, sleep) rather than being CPU-bound.
 
+### Network scanning (nmap)
+
+Installed `nmap` on the VM and scanned the local machine to confirm which ports are publicly visible:
+
+```bash
+nmap localhost
+```
+
+```
+PORT     STATE  SERVICE
+22/tcp   open   ssh
+80/tcp   open   http
+81/tcp   open   hosts2-ns
+443/tcp  open   https
+9000/tcp open   cslistener
+```
+
+Tested detection of a running vs stopped service:
+
+```bash
+# start api.py in background
+python3 ~/api.py &
+nmap -p 8080 localhost   # → 8080/tcp open  http-proxy
+
+# stop api.py
+kill %1
+nmap -p 8080 localhost   # → 8080/tcp closed http-proxy
+```
+
+> nmap reports port labels based on the IANA registry, not the actual application — port 81 appears as `hosts2-ns` even though it is the NPM admin panel. A port scanner sees open ports, not what is running inside them.
+
+### Firewall (ufw)
+
+Configured `ufw` on the OrbStack VM to enforce a default-deny inbound policy, allowing only the services that should be reachable:
+
+```bash
+sudo ufw allow 22/tcp    # SSH — must be allowed before enabling, or the session is lost
+sudo ufw allow 80/tcp    # HTTP
+sudo ufw allow 443/tcp   # HTTPS
+sudo ufw allow 81/tcp    # NPM admin panel
+sudo ufw enable
+```
+
+```bash
+sudo ufw status verbose
+```
+
+```
+Status: active
+Default: deny (incoming), allow (outgoing), deny (routed)
+
+To          Action    From
+--          ------    ----
+22/tcp      ALLOW IN  Anywhere
+80/tcp      ALLOW IN  Anywhere
+443/tcp     ALLOW IN  Anywhere
+81/tcp      ALLOW IN  Anywhere
+```
+
+Validated: SSH session remained active after enabling ufw, and port 8080 (api.py) became unreachable from the Mac — blocked by the firewall even though the process was still listening on the VM.
+
+### System monitoring (htop)
+
+```bash
+htop
+```
+
+Interactive process viewer showing per-core CPU usage bars, memory/swap meters, and a sortable live process list with PID, CPU%, MEM%, and command. Useful for identifying which process is consuming resources on a remote server.
+
 ---
 
 ## Network Diagram
