@@ -1,16 +1,16 @@
 services:
-  # SERVICE 1: Base de données MariaDB
+  # SERVICE 1: MariaDB database
   db:
-    image: mariadb:10.6.4-focal       # image officielle MariaDB
+    image: mariadb:10.6.4-focal       # official MariaDB image
     container_name: wordpress_db
     restart: unless-stopped
     env_file:
-      - .env                            # secrets charges depuis .env (jamais commit sur Git)
+      - .env                          # secrets loaded from .env (never commit this to Git)
     volumes:
-      - db_data:/var/lib/mysql           # volume nommé: données persistées
+      - db_data:/var/lib/mysql        # named volume: persistent data
     networks:
-      - internal                         # réseau interne uniquement
-    # IMPORTANT: pas de ports: -> MariaDB inaccessible depuis l'extérieur
+      - internal                      # internal-only network
+    # IMPORTANT: no ports -> MariaDB is not accessible from the outside
 
   # SERVICE 2: WordPress
   wordpress:
@@ -18,15 +18,15 @@ services:
     container_name: wordpress_app
     restart: unless-stopped
     env_file:
-      - .env                            # secrets charges depuis .env
+      - .env                          # secrets loaded from .env
     environment:
-      WORDPRESS_DB_HOST: db:3306         # 'db' = nom du service MariaDB
+      WORDPRESS_DB_HOST: db:3306      # 'db' = MariaDB service name
       WORDPRESS_DB_NAME: ${MYSQL_DATABASE}
       WORDPRESS_DB_USER: ${MYSQL_USER}
       WORDPRESS_DB_PASSWORD: ${MYSQL_PASSWORD}
     networks:
-      - internal                         # réseau interne uniquement
-    # IMPORTANT: pas de ports: -> WordPress inaccessible directement
+      - internal                      # internal-only network
+    # IMPORTANT: no ports -> WordPress is not directly accessible
 
   # SERVICE 3: NGINX Proxy Manager (reverse proxy)
   npm:
@@ -34,31 +34,31 @@ services:
     container_name: nginx_proxy_manager
     restart: unless-stopped
     ports:
-      - "80:80"     # trafic HTTP public
-      - "81:81"     # panneau admin NPM
-      - "443:443"   # trafic HTTPS public
+      - "80:80"     # public HTTP traffic
+      - "81:81"     # NPM admin panel
+      - "443:443"   # public HTTPS traffic
     volumes:
-      - npm_data:/data                   # configuration NPM persistée
-      - npm_letsencrypt:/etc/letsencrypt # certificats SSL persistés
+      - npm_data:/data                # persistent NPM configuration
+      - npm_letsencrypt:/etc/letsencrypt # persistent SSL certificates
     networks:
-      - internal    # parle avec WordPress (réseau interne)
-      - external    # expose vers internet (réseau externe)
-    # NPM est l'UNIQUE point d'entrée visible depuis l'extérieur
+      - internal    # communicates with WordPress (internal network)
+      - external    # exposed to the internet (external network)
+    # NPM is the ONLY entry point visible from the outside
 
-# VOLUMES NOMMÉS: données persistées même si containers supprimés
+# NAMED VOLUMES: data persists even if containers are removed
 volumes:
-  db_data:           # données MySQL
-  npm_data:          # configuration NPM
-  npm_letsencrypt:   # certificats SSL
+  db_data:           # MySQL data
+  npm_data:          # NPM configuration
+  npm_letsencrypt:   # SSL certificates
 
-# RÉSEAUX: isolation par couches
+# NETWORKS: layered isolation
 networks:
   internal:
-    driver: bridge   # réseau privé: db + wordpress + npm
+    driver: bridge   # private network: db + wordpress + npm
   external:
-    driver: bridge   # réseau public: npm uniquement
+    driver: bridge   # public network: npm only
 
 # Note:
-# Flux réseau résultant: Internet → NPM :80/:443 → wordpress_app:80 → db:3306
+# Resulting network flow: Internet → NPM :80/:443 → wordpress_app:80 → db:3306
 #                                   (external)      (internal)      (internal)
-# MariaDB n'est jamais exposé. WordPress n'est jamais exposé. Seul NPM est visible depuis l'extérieur — principe du reverse proxy.
+# MariaDB is never exposed. WordPress is never exposed. Only NPM is visible from the outside — the core principle of a reverse proxy.
